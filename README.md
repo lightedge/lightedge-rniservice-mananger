@@ -1,11 +1,9 @@
 The LightEdge Runtime
 ============================================
 
-### What is the LightEdge Runtime?
+### What is the LightEdge RNI Service Manager?
 
-The LightEdge Runtime merges the functions of the ETCI Mobile Edge Platform
-and Mobile Edge Platform Manager. It is in charge of handiling service
-discovery, traffic rule management, and DNS configuration.
+The LightEdge RNI Service Manager implements and ETSI compliant Radio Network Information microservice for the LightEdge platform. For now interaction with the RAN is possible only using the 5G-EmPOWER controller.
 
 ### What is LightEdge?
 LightEdge is a standard compliant implementation of the ETSI MEC Architecture.
