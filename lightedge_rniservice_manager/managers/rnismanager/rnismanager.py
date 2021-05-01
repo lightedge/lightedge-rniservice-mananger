@@ -21,6 +21,8 @@ import json
 
 from tornado.httpclient import AsyncHTTPClient
 
+from empower_core.serialize import serialize
+from empower_core.appworker import EVERY
 from empower_core.service import EService
 from empower_core.launcher import srv_or_die
 
@@ -40,7 +42,72 @@ SUBSCRIPTIONS = {
 }
 
 
-class RNISManager(EService):
+class MECManager(EService):
+    """MEC Microservice baseclass."""
+
+    def __init__(self, context, service_id, every=EVERY, **kwargs):
+
+        super().__init__(context=context, service_id=service_id, every=every,
+                         **kwargs)
+
+        self.mec_service_registry = "http://127.0.0.1:8887/api/v1/services"
+        self.state = "UNREGISTERED"
+
+    def to_dict(self):
+        """Return JSON representation."""
+
+        output = super().to_dict()
+
+        output['mec_service'] = self.mec_service
+
+        return output
+
+    @property
+    def mec_service(self):
+        """Return subscriptions."""
+
+        return {
+            "serInstanceId": self.service_id,
+            "serName": "Radio Network Information Service",
+            "serCategory": {
+                "href": "/rni/v2/",
+                "id": "rni",
+                "name": "Radio Network Information Service",
+                "version": "2.0"
+            },
+            "version": "1.0",
+            "state": "ACTIVE",
+            "serializer": "JSON",
+        }
+
+    async def loop(self):
+        """Periodic job."""
+
+        response = await self.register_mec_service()
+
+        if response.code == 201:
+            self.state = "REGISTERED"
+        else:
+            self.state = "UNREGISTERED"
+
+        self.log.info("Sending periodic keep-alive, response %u",
+                      response.code)
+
+    async def register_mec_service(self):
+        """Register MEC service."""
+
+        http_client = AsyncHTTPClient()
+
+        url = self.mec_service_registry + "/" + str(self.service_id)
+        body = serialize(self.mec_service)
+
+        response = await http_client.fetch(url, method='POST',
+                                           body=json.dumps(body))
+
+        return response
+
+
+class RNISManager(MECManager):
     """Service exposing the RNI service
 
     Parameters:
@@ -51,11 +118,12 @@ class RNISManager(EService):
     HANDLERS = [SubscriptionsHandler, SubscriptionsCallbackHandler]
 
     def __init__(self, context, service_id, ctrl_host, ctrl_port,
-                 ctrl_user, ctrl_pwd):
+                 ctrl_user, ctrl_pwd, every=EVERY):
 
         super().__init__(context=context, service_id=service_id,
                          ctrl_host=ctrl_host, ctrl_port=ctrl_port,
-                         ctrl_user=ctrl_user, ctrl_pwd=ctrl_pwd)
+                         ctrl_user=ctrl_user, ctrl_pwd=ctrl_pwd,
+                         every=every)
 
     def handle_callback(self, service_id, callback):
         """Subscription callback invoked by empower."""
@@ -223,8 +291,8 @@ class RNISManager(EService):
 
 def launch(context, service_id, ctrl_host=DEFAULT_HOST,
            ctrl_port=DEFAULT_PORT, ctrl_user=DEFAULT_USER,
-           ctrl_pwd=DEFAULT_PWD):
+           ctrl_pwd=DEFAULT_PWD, every=EVERY):
     """ Initialize the module. """
 
     return RNISManager(context, service_id, ctrl_host, ctrl_port, ctrl_user,
-                       ctrl_pwd)
+                       ctrl_pwd, every)
