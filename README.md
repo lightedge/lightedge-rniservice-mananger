@@ -10,6 +10,8 @@ LightEdge is a standard compliant implementation of the ETSI MEC Architecture.
 
 ### Top-Level Features
 * Designed to nativelly run in a Kubernetes environment
+* ETSI MEC Radio Network Information and WLAN Information APIs
+* Native support for Helm as package manager
 * Transparent Bump-in-the-wire (BITW) implementation for backward compatibility
 * Supports opensource and commercial LTE eNodeBs and EPCs
 * Implements standard ETSI MEC service interface
