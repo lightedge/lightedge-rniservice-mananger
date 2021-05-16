@@ -38,7 +38,8 @@ DEFAULT_USER = "root"
 DEFAULT_PWD = "root"
 
 SUBSCRIPTIONS = {
-    "MeasRepUeSubscription": "lightedge.workers.measrepue.measrepue"
+    "MeasRepUeSubscription":
+        "lightedge_rniservice_manager.workers.measrepue.measrepue"
 }
 
 
@@ -102,7 +103,8 @@ class MECManager(EService):
         body = serialize(self.mec_service)
 
         response = await http_client.fetch(url, method='POST',
-                                           body=json.dumps(body))
+                                           body=json.dumps(body),
+                                           raise_error=False)
 
         return response
 
@@ -125,12 +127,6 @@ class RNISManager(MECManager):
                          ctrl_user=ctrl_user, ctrl_pwd=ctrl_pwd,
                          every=every)
 
-    def handle_callback(self, service_id, callback):
-        """Subscription callback invoked by empower."""
-
-        self.log.info("Received callback for subscription %s", service_id)
-        self.log.info(callback)
-
     @property
     def empower_url(self):
         """Return empower URL."""
@@ -144,7 +140,8 @@ class RNISManager(MECManager):
         """REST get method."""
 
         http_client = AsyncHTTPClient()
-        response = await http_client.fetch(self.empower_url + url)
+        response = await http_client.fetch(self.empower_url + url,
+                                           raise_error=False)
 
         return response
 
@@ -157,7 +154,8 @@ class RNISManager(MECManager):
 
         response = await http_client.fetch(self.empower_url + url,
                                            method='POST',
-                                           body=json.dumps(data))
+                                           body=json.dumps(data),
+                                           raise_error=False)
 
         return response
 
@@ -213,6 +211,8 @@ class RNISManager(MECManager):
         sub = env.register_service(name=name,
                                    params=params,
                                    service_id=sub_id)
+
+        sub.add_callback(sub.callback_reference, callback_type="rest")
 
         return sub
 

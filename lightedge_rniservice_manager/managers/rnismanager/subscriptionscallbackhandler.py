@@ -34,4 +34,4 @@ class SubscriptionsCallbackHandler(apimanager.APIHandler):
 
         service_id = uuid.UUID(args[0])
 
-        self.service.handle_callback(service_id, kwargs)
+        self.service.subscriptions[service_id].handle_response(kwargs)

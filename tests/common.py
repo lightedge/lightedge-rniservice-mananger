@@ -21,7 +21,7 @@ import json
 import unittest
 import requests
 
-URL = "http://%s:%s@127.0.0.1:8889%s"
+URL = "http://%s:%s@127.0.0.1:8890%s"
 
 
 class BaseTest(unittest.TestCase):

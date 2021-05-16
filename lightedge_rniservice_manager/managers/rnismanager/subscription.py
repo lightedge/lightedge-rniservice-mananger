@@ -17,8 +17,6 @@
 
 """A genercic subscription."""
 
-import json
-
 from empower_core.launcher import srv_or_die
 from empower_core.worker import EWorker
 
@@ -32,12 +30,33 @@ class Subscription(EWorker):
 
     MODULES = []
 
-    def __init__(self, context, service_id, every, subscription):
+    def __init__(self, context, service_id, every, subscription, uri):
 
         super().__init__(context=context, service_id=service_id, every=every,
-                         subscription=subscription)
+                         subscription=subscription, uri=uri)
 
         self.manager = srv_or_die("rnimanager")
+
+    def handle_response(self, callback):
+        """Handle response to one subscription."""
+
+        self.log.info("Received callback for subscription %s", self.service_id)
+        self.log.info(callback)
+
+        # handle callbacks
+        self.handle_callbacks()
+
+    @property
+    def uri(self):
+        """Return uri."""
+
+        return self.params["uri"]
+
+    @uri.setter
+    def uri(self, value):
+        """Set uri."""
+
+        self.params["uri"] = value
 
     @property
     def callback_reference(self):
@@ -66,8 +85,6 @@ class Subscription(EWorker):
     @subscription.setter
     def subscription(self, value):
         """Set subscription."""
-
-        value = json.loads(value)
 
         for param in self.SUB_PARAMS:
             if param not in value:

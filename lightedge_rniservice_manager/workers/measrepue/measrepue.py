@@ -27,6 +27,8 @@ from empower_core.imsi import IMSI
 from lightedge_rniservice_manager.managers.rnismanager.subscription \
     import Subscription
 
+DEFAULT_URI = "http://127.0.0.1:8890"
+
 
 class MeasRepUe(Subscription):
     """Meas Rep UE."""
@@ -36,10 +38,10 @@ class MeasRepUe(Subscription):
     SUB_PARAMS = ['callbackReference', 'expiryDeadline',
                   'filterCriteriaAssocTri', 'subscriptionType']
 
-    def __init__(self, context, service_id, every, subscription):
+    def __init__(self, context, service_id, every, subscription, uri):
 
         super().__init__(context=context, service_id=service_id, every=every,
-                         subscription=subscription)
+                         subscription=subscription, uri=uri)
 
         self.app_id = None
         self.project_id = None
@@ -118,11 +120,13 @@ class MeasRepUe(Subscription):
         self.app_id = location.split("/")[-1]
 
         # Add callback
+        callback = "%s/rni/v2/subscriptions/%s/ch" % (self.uri,
+                                                      self.service_id)
+
         data = {
             "version": "1.0",
             "name": "default",
-            "callback": "http://127.0.0.1:8889/rni/v2/subscriptions/%s/ch" %
-            self.service_id,
+            "callback": callback,
             "callback_type": "rest"
         }
 
@@ -137,8 +141,8 @@ class MeasRepUe(Subscription):
         self.log.info("Remote worker successfully configured.")
 
 
-def launch(context, service_id, subscription, every=EVERY):
+def launch(context, service_id, subscription, uri=DEFAULT_URI, every=EVERY):
     """ Initialize the module. """
 
     return MeasRepUe(context=context, service_id=service_id, every=every,
-                     subscription=subscription)
+                     subscription=subscription, uri=uri)
