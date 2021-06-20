@@ -56,8 +56,6 @@ class TestMeasRepUe(BaseTest):
 
         self.post(("root", "root", loc), data, 201)
 
-        return
-
         self.get(("root", "root", loc), 200)
 
         self.post(("root", "root", loc), data, 400)

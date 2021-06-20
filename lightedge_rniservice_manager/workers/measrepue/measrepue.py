@@ -24,8 +24,7 @@ from empower_core.app import EVERY
 from empower_core.plmnid import PLMNID
 from empower_core.imsi import IMSI
 
-from lightedge_rniservice_manager.managers.rnismanager.subscription \
-    import Subscription
+from lightedge_core.subscription import Subscription
 
 DEFAULT_URI = "http://127.0.0.1:8890"
 
@@ -47,7 +46,15 @@ class MeasRepUe(Subscription):
         self.project_id = None
 
     async def loop(self):
-        """Periodic loop."""
+        """Periodic job."""
+
+        try:
+            await self.register()
+        except ConnectionRefusedError:
+            self.log.error("Unable to contact controller")
+
+    async def register(self):
+        """Worker on controller."""
 
         # Both project id and app id are set check if they are valid
         if self.project_id and self.app_id:
@@ -55,7 +62,7 @@ class MeasRepUe(Subscription):
             url = "/projects/%s/apps/%s/callbacks/default" % \
                 (self.project_id, self.app_id)
 
-            resp = await self.manager.get(url)
+            resp = await self.manager.get(self.manager.empower_url + url)
 
             # All ok, we can return
             if resp.code == 200:
@@ -65,7 +72,7 @@ class MeasRepUe(Subscription):
         plmn = self.subscription['filterCriteriaAssocTri']['ecgi']['plmn']
         plmnid = PLMNID("".join(plmn.values()))
 
-        resp = await self.manager.get("/projects")
+        resp = await self.manager.get(self.manager.empower_url + "/projects")
 
         if not resp.code == 200:
             self.log.error("Unable to find PLMN %s", plmnid)
@@ -82,7 +89,8 @@ class MeasRepUe(Subscription):
                 self.project_id = uuid.UUID(project['project_id'])
                 break
 
-        resp = await self.manager.get("/projects/%s" % self.project_id)
+        url = "/projects/%s" % self.project_id
+        resp = await self.manager.get(self.manager.empower_url + url)
 
         if resp.code != 200:
             self.log.error("Unable to find PLMN %s", plmnid)
@@ -108,7 +116,7 @@ class MeasRepUe(Subscription):
         }
 
         url = "/projects/%s/apps" % self.project_id
-        resp = await self.manager.post(url, data)
+        resp = await self.manager.post(self.manager.empower_url + url, data)
 
         if not resp.code == 201:
             self.log.error("Unable to start worker, error %u",
@@ -131,7 +139,7 @@ class MeasRepUe(Subscription):
         }
 
         url = "/projects/%s/apps/%s/callbacks" % (self.project_id, self.app_id)
-        resp = await self.manager.post(url, data)
+        resp = await self.manager.post(self.manager.empower_url + url, data)
 
         if not resp.code == 201:
             self.log.error("Unable to add callback, error %u",
